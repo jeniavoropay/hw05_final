@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
 
+from ..urls import app_name
+
 TEST_SLUG = 'test_slug'
 TEST_NAME = 'test_name'
 POST_ID = 1
@@ -24,4 +26,5 @@ class PostRoutesTest(TestCase):
         """Рассчитываемые маршруты дают ожидаемые явные url."""
         for url, route, args in URL_ROUTES:
             with self.subTest(url=url):
-                self.assertEqual(url, reverse(f'posts:{route}', args=args))
+                self.assertEqual(
+                    url, reverse(f'{app_name}:{route}', args=args))

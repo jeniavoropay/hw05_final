@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Лента подписок{% endblock %}
 {% block content %}
-  {% include 'posts/includes/switcher.html' %}
-  <h1>Лента подписок | {{ user }}</h1>
+  {% include 'posts/includes/switcher.html' with follow=True %}
+  <h1>Лента подписок | {{ user.username }}</h1>
+  <br>
   {% for post in page_obj %}
     {% include 'posts/includes/post_card.html' %}
     {% if not forloop.last %}<hr>{% endif %}

@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+import django.contrib.auth as dca
 from django.core.cache import cache
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -21,6 +22,7 @@ NEXT = '?next='
 REDIRECT_LOGIN_POST_CREATE = f'{LOGIN}{NEXT}{POST_CREATE}'
 REDIRECT_LOGIN_FOLLOW = f'{LOGIN}{NEXT}{FOLLOW_USER}'
 REDIRECT_LOGIN_UNFOLLOW = f'{LOGIN}{NEXT}{UNFOLLOW_USER}'
+REDIRECT_LOGIN_FOLLOW_INDEX = f'{LOGIN}{NEXT}{FOLLOW}'
 UNEXISTING_PAGE = '/unexisting_page/'
 OK = HTTPStatus.OK
 REDIRECT = HTTPStatus.FOUND
@@ -45,62 +47,58 @@ class PostURLTest(TestCase):
         )
         cls.POST_DETAIL = reverse('posts:post_detail', args=[cls.post.id])
         cls.POST_EDIT = reverse('posts:post_edit', args=[cls.post.id])
-        cls.POST_COMMENT = reverse('posts:add_comment', args=[cls.post.id])
         cls.REDIRECT_LOGIN_POST_EDIT = f'{LOGIN}{NEXT}{cls.POST_EDIT}'
-        cls.REDIRECT_LOGIN_POST_COMMENT = f'{LOGIN}{NEXT}{cls.POST_COMMENT}'
 
     def setUp(self):
-        cache.clear()
-        self.guest = Client()
         self.author = Client()
         self.author.force_login(self.user)
         self.another_author = Client()
         self.another_author.force_login(self.user_2)
 
-    def test_urls_exists_at_desired_location(self):
+    def test_urls_at_desired_location(self):
         """Проверяется доступность страниц для пользователя с разными
         правами доступа."""
         pages_response = [
-            [INDEX, self.guest, OK],
-            [GROUP_LIST, self.guest, OK],
-            [PROFILE, self.guest, OK],
-            [self.POST_DETAIL, self.guest, OK],
-            [self.POST_EDIT, self.guest, REDIRECT],
-            [POST_CREATE, self.guest, REDIRECT],
-            [UNEXISTING_PAGE, self.guest, NOT_FOUND],
+            [INDEX, self.client, OK],
+            [GROUP_LIST, self.client, OK],
+            [PROFILE, self.client, OK],
+            [self.POST_DETAIL, self.client, OK],
+            [self.POST_EDIT, self.client, REDIRECT],
+            [POST_CREATE, self.client, REDIRECT],
+            [UNEXISTING_PAGE, self.client, NOT_FOUND],
             [self.POST_EDIT, self.author, OK],
             [POST_CREATE, self.author, OK],
             [self.POST_EDIT, self.another_author, REDIRECT],
-            [self.POST_COMMENT, self.guest, REDIRECT],
-            [self.POST_COMMENT, self.author, REDIRECT],
-            [FOLLOW_USER, self.guest, REDIRECT],
-            [UNFOLLOW_USER, self.guest, REDIRECT],
+            [FOLLOW, self.client, REDIRECT],
+            [FOLLOW, self.author, OK],
+            [FOLLOW_USER, self.client, REDIRECT],
+            [FOLLOW_USER, self.another_author, REDIRECT],
+            [UNFOLLOW_USER, self.client, REDIRECT],
+            [UNFOLLOW_USER, self.another_author, REDIRECT]
         ]
-        for url, user, http in pages_response:
-            with self.subTest(url=url, user=user):
-                self.assertEqual(user.get(url).status_code, http)
+        for url, client, http in pages_response:
+            with self.subTest(url=url, client=dca.get_user(client).username):
+                self.assertEqual(client.get(url).status_code, http)
 
-    def test_anonymous_is_redirected_to_login_page(self):
-        """Страницы post_create, post_edit, add_сomment, profile_follow и
-        profile_unfollow перенаправляют анонимного пользователя
-        на страницу логина. post_edit перенаправляет не-автора поста
-        на post_detail."""
+    def test_anonymous_is_redirected_to_page(self):
+        """Перенаправление пользователей с разными правамии доступа."""
         pages_redirect = [
-            [POST_CREATE, self.guest, REDIRECT_LOGIN_POST_CREATE],
-            [self.POST_EDIT, self.guest, self.REDIRECT_LOGIN_POST_EDIT],
+            [POST_CREATE, self.client, REDIRECT_LOGIN_POST_CREATE],
+            [self.POST_EDIT, self.client, self.REDIRECT_LOGIN_POST_EDIT],
             [self.POST_EDIT, self.another_author, self.POST_DETAIL],
-            # Спринт 6: неавторизованный пользыватель
-            # не может комментировать посты
-            [self.POST_COMMENT, self.guest, self.REDIRECT_LOGIN_POST_COMMENT],
-            [FOLLOW_USER, self.guest, REDIRECT_LOGIN_FOLLOW],
-            [UNFOLLOW_USER, self.guest, REDIRECT_LOGIN_UNFOLLOW],
+            [FOLLOW_USER, self.client, REDIRECT_LOGIN_FOLLOW],
+            [UNFOLLOW_USER, self.client, REDIRECT_LOGIN_UNFOLLOW],
+            [FOLLOW, self.client, REDIRECT_LOGIN_FOLLOW_INDEX],
+            [FOLLOW_USER, self.another_author, PROFILE],
+            [UNFOLLOW_USER, self.another_author, PROFILE]
         ]
-        for url, user, redirect in pages_redirect:
-            with self.subTest(url=url, user=user):
-                self.assertRedirects(user.get(url), redirect)
+        for url, client, redirect in pages_redirect:
+            with self.subTest(url=url, client=dca.get_user(client).username):
+                self.assertRedirects(client.get(url), redirect)
 
     def test_urls_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
+        cache.clear()
         templates_url_names = {
             INDEX: 'posts/index.html',
             GROUP_LIST: 'posts/group_list.html',
@@ -115,5 +113,4 @@ class PostURLTest(TestCase):
             with self.subTest(address=address):
                 self.assertTemplateUsed(
                     self.author.get(address),
-                    template
-                )
+                    template)

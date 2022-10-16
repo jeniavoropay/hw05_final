@@ -6,7 +6,7 @@ User = get_user_model()
 
 class Group(models.Model):
     title = models.CharField('Группа', max_length=200)
-    slug = models.SlugField('человекочитаемый URL', unique=True)
+    slug = models.SlugField('человекочитаемый идентификатор', unique=True)
     description = models.TextField('описание')
 
     class Meta:
@@ -61,6 +61,7 @@ class Comment(models.Model):
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
+        verbose_name='пост с комментарием',
         related_name='comments',
     )
     author = models.ForeignKey(
@@ -75,6 +76,11 @@ class Comment(models.Model):
         verbose_name='дата публикации'
     )
 
+    class Meta:
+        verbose_name = 'комментарий'
+        verbose_name_plural = 'комментарии'
+        ordering = ('-created',)
+
     def __str__(self):
         return self.text[:15]
 
@@ -83,10 +89,23 @@ class Follow(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
+        verbose_name='подписчик',
         related_name='follower',
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
+        verbose_name='автор',
         related_name='following',
     )
+
+    class Meta:
+        verbose_name = 'подписки'
+        verbose_name_plural = 'подписки'
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'author'],
+                                    name='unique_follow')
+        ]
+
+    def __str__(self):
+        return f'{self.user}-{self.author}'
