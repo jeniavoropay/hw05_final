@@ -20,7 +20,7 @@
     {% endif %}
   </div> 
   {% for post in page_obj %} 
-    {% include 'posts/includes/post_card.html' %}          
+    {% include 'posts/includes/post_card.html' with profile=True %}          
     {% if not forloop.last %}<hr>{% endif %} 
   {% endfor %} 
   {% include 'posts/includes/paginator.html' %}

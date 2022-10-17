@@ -4,7 +4,7 @@
   <h1>{{ group.title }}</h1>
   <p>{{ group.description|linebreaksbr }}</p>  
   {% for post in page_obj %}       
-    {% include 'posts/includes/post_card.html' %}
+    {% include 'posts/includes/post_card.html' with group_list=True %}
     {% if not forloop.last %}<hr>{% endif %}
   {% endfor %} 
   {% include 'posts/includes/paginator.html' %}

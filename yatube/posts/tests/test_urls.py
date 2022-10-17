@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-import django.contrib.auth as dca
+import django.contrib.auth
 from django.core.cache import cache
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -48,12 +48,10 @@ class PostURLTest(TestCase):
         cls.POST_DETAIL = reverse('posts:post_detail', args=[cls.post.id])
         cls.POST_EDIT = reverse('posts:post_edit', args=[cls.post.id])
         cls.REDIRECT_LOGIN_POST_EDIT = f'{LOGIN}{NEXT}{cls.POST_EDIT}'
-
-    def setUp(self):
-        self.author = Client()
-        self.author.force_login(self.user)
-        self.another_author = Client()
-        self.another_author.force_login(self.user_2)
+        cls.author = Client()
+        cls.author.force_login(cls.user)
+        cls.another_author = Client()
+        cls.another_author.force_login(cls.user_2)
 
     def test_urls_at_desired_location(self):
         """Проверяется доступность страниц для пользователя с разными
@@ -73,11 +71,15 @@ class PostURLTest(TestCase):
             [FOLLOW, self.author, OK],
             [FOLLOW_USER, self.client, REDIRECT],
             [FOLLOW_USER, self.another_author, REDIRECT],
+            [FOLLOW_USER, self.author, REDIRECT],
             [UNFOLLOW_USER, self.client, REDIRECT],
-            [UNFOLLOW_USER, self.another_author, REDIRECT]
+            [UNFOLLOW_USER, self.another_author, REDIRECT],
+            [UNFOLLOW_USER, self.author, NOT_FOUND],
         ]
         for url, client, http in pages_response:
-            with self.subTest(url=url, client=dca.get_user(client).username):
+            with self.subTest(url=url, client=(
+                django.contrib.auth.get_user(client).username)
+            ):
                 self.assertEqual(client.get(url).status_code, http)
 
     def test_anonymous_is_redirected_to_page(self):
@@ -90,10 +92,13 @@ class PostURLTest(TestCase):
             [UNFOLLOW_USER, self.client, REDIRECT_LOGIN_UNFOLLOW],
             [FOLLOW, self.client, REDIRECT_LOGIN_FOLLOW_INDEX],
             [FOLLOW_USER, self.another_author, PROFILE],
-            [UNFOLLOW_USER, self.another_author, PROFILE]
+            [UNFOLLOW_USER, self.another_author, PROFILE],
+            [FOLLOW_USER, self.author, PROFILE],
         ]
         for url, client, redirect in pages_redirect:
-            with self.subTest(url=url, client=dca.get_user(client).username):
+            with self.subTest(url=url, client=(
+                django.contrib.auth.get_user(client).username)
+            ):
                 self.assertRedirects(client.get(url), redirect)
 
     def test_urls_uses_correct_template(self):

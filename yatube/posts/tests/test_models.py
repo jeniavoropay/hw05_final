@@ -35,5 +35,6 @@ class PostModelTest(TestCase):
         self.assertEqual(self.comment.text[:15], str(self.comment))
         self.assertEqual(self.post.group.title, str(self.post.group))
         self.assertEqual(
-            f'{self.subscription.user}-{self.subscription.author}',
+            f'{self.subscription.user.username}-'
+            f'{self.subscription.author.username}',
             str(self.subscription))

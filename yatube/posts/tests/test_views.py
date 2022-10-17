@@ -64,6 +64,8 @@ class PostViewsTest(TestCase):
             image=TEST_IMAGE
         )
         cls.POST_DETAIL = reverse('posts:post_detail', args=[cls.post.id])
+        cls.authorized_user = Client()
+        cls.authorized_user.force_login(cls.user)
         cls.authorized_user_2 = Client()
         cls.authorized_user_2.force_login(cls.user_2)
 
@@ -71,10 +73,6 @@ class PostViewsTest(TestCase):
     def tearDownClass(cls):
         super().tearDownClass()
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
-
-    def setUp(self):
-        self.authorized_user = Client()
-        self.authorized_user.force_login(self.user)
 
     def test_pages_show_correct_context(self):
         """Шаблоны index, group_list, profile, post_detail, follow_index
@@ -138,15 +136,16 @@ class PostViewsTest(TestCase):
             )
             for i in range(settings.POSTS_PER_PAGE)
         )
+        posts_second_page = Post.objects.count() - settings.POSTS_PER_PAGE
         pages = [
             [INDEX, settings.POSTS_PER_PAGE],
             [GROUP_LIST, settings.POSTS_PER_PAGE],
             [PROFILE, settings.POSTS_PER_PAGE],
             [FOLLOW, settings.POSTS_PER_PAGE],
-            [f'{INDEX}?page=2', 1],
-            [f'{GROUP_LIST}?page=2', 1],
-            [f'{PROFILE}?page=2', 1],
-            [f'{FOLLOW}?page=2', 1],
+            [f'{INDEX}?page=2', posts_second_page],
+            [f'{GROUP_LIST}?page=2', posts_second_page],
+            [f'{PROFILE}?page=2', posts_second_page],
+            [f'{FOLLOW}?page=2', posts_second_page],
         ]
         for page, num_posts in pages:
             with self.subTest(page=page):
@@ -157,7 +156,7 @@ class PostViewsTest(TestCase):
         """При удалении поста он останется в response.content /index/,
         пока не отчистить кэш принудительно."""
         response_1 = self.authorized_user.get(INDEX)
-        Post.objects.get(id=self.post.id).delete()
+        Post.objects.all().delete
         response_2 = self.authorized_user.get(INDEX)
         self.assertEqual(response_1.content, response_2.content)
         cache.clear()
