@@ -160,10 +160,6 @@ class PostFormsTest(TestCase):
         self.assertEqual(comment.post, self.post)
         self.assertEqual(comment.text, form_data['text'])
 
-# Да, нужно проверить, что объект в базе не появился.
-# Но!
-# Строка 187 не учитывает случай, когда один пост удалили, другой добавили.
-# Строка 188 не учитывает случай, когда объект создали с другим текстом.
     def test_guest_can_not_create_post_or_comment(self):
         """Неавторизованный пользователь не может создать
         пост или комментарий."""
