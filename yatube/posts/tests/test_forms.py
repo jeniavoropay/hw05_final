@@ -211,4 +211,9 @@ class PostFormsTest(TestCase):
                 )
                 post = Post.objects.get(id=self.post.id)
                 self.assertRedirects(response, redirect_url)
-                self.assertEqual(post.id, self.post.id)
+                self.assertEqual(post.text, self.post.text)
+                self.assertEqual(post.group, self.post.group)
+                self.assertEqual(
+                    post.author.username,
+                    self.post.author.username
+                )
