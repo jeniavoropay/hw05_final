@@ -213,7 +213,5 @@ class PostFormsTest(TestCase):
                 self.assertRedirects(response, redirect_url)
                 self.assertEqual(post.text, self.post.text)
                 self.assertEqual(post.group, self.post.group)
-                self.assertEqual(
-                    post.author.username,
-                    self.post.author.username
-                )
+                self.assertEqual(post.author, self.post.author)
+                self.assertEqual(post.image, self.post.image)
