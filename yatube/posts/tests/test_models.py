@@ -33,7 +33,7 @@ class PostModelTest(TestCase):
         """Проверяем, что у моделей корректно работает __str__."""
         self.assertEqual(self.post.text[:15], str(self.post))
         self.assertEqual(self.comment.text[:15], str(self.comment))
-        self.assertEqual(self.post.group.title, str(self.post.group))
+        self.assertEqual(self.group.title, str(self.post.group))
         self.assertEqual(
             f'{self.subscription.user.username}-'
             f'{self.subscription.author.username}',

@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-import django.contrib.auth
+from django.contrib.auth import get_user
 from django.core.cache import cache
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -77,9 +77,7 @@ class PostURLTest(TestCase):
             [UNFOLLOW_USER, self.author, NOT_FOUND],
         ]
         for url, client, http in pages_response:
-            with self.subTest(url=url, client=(
-                django.contrib.auth.get_user(client).username)
-            ):
+            with self.subTest(url=url, client=get_user(client).username):
                 self.assertEqual(client.get(url).status_code, http)
 
     def test_anonymous_is_redirected_to_page(self):
@@ -96,9 +94,7 @@ class PostURLTest(TestCase):
             [FOLLOW_USER, self.author, PROFILE],
         ]
         for url, client, redirect in pages_redirect:
-            with self.subTest(url=url, client=(
-                django.contrib.auth.get_user(client).username)
-            ):
+            with self.subTest(url=url, client=get_user(client).username):
                 self.assertRedirects(client.get(url), redirect)
 
     def test_urls_uses_correct_template(self):

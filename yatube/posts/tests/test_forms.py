@@ -41,6 +41,7 @@ TEST_IMAGE_2 = SimpleUploadedFile(
     content=IMAGE_CONTENT,
     content_type='image/png',
 )
+IMAGE_FOLDER = Post._meta.get_field("image").upload_to
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
@@ -101,9 +102,10 @@ class PostFormsTest(TestCase):
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.group_id, form_data['group'])
         self.assertEqual(post.author, self.user)
-        self.assertEqual(post.image.name,
-                         f'{Post._meta.get_field("image").upload_to}'
-                         f'{form_data["image"].name}')
+        self.assertEqual(
+            post.image.name,
+            f'{IMAGE_FOLDER}{form_data["image"].name}'
+        )
 
     def test_edit_post(self):
         """Валидная форма редактирует запись в БД."""
@@ -124,9 +126,10 @@ class PostFormsTest(TestCase):
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.group_id, form_data['group'])
         self.assertEqual(post.author, self.post.author)
-        self.assertEqual(post.image.name,
-                         f'{Post._meta.get_field("image").upload_to}'
-                         f'{form_data["image"].name}')
+        self.assertEqual(
+            post.image.name,
+            f'{IMAGE_FOLDER}{form_data["image"].name}'
+        )
 
     def test_create_post_page_show_correct_context(self):
         """Шаблон create_post для создания и редактирования поста сформирован
@@ -144,8 +147,7 @@ class PostFormsTest(TestCase):
                     self.assertIsInstance(form_field, expected)
 
     def test_create_comment(self):
-        """Комментарий создается в БД и попадает на страницу без
-        искажения атрибутов."""
+        """Комментарий создается в БД."""
         Comment.objects.all().delete()
         form_data = {'text': 'Тестовый комментарий'}
         response = self.authorized_client.post(
@@ -163,6 +165,8 @@ class PostFormsTest(TestCase):
     def test_guest_can_not_create_post_or_comment(self):
         """Неавторизованный пользователь не может создать
         пост или комментарий."""
+        Post.objects.all().delete()
+        Comment.objects.all().delete()
         cases = (
             (Post, POST_CREATE, REDIRECT_POST_CREATE, {
                 'text': 'Еще один тестовый пост',
@@ -175,28 +179,13 @@ class PostFormsTest(TestCase):
         )
         for obj, url, redirect_url, form_data, in cases:
             with self.subTest(url=url):
-                obj_count = obj.objects.count()
                 response = self.client.post(
                     url,
                     data=form_data,
                     follow=True
                 )
                 self.assertRedirects(response, redirect_url)
-                self.assertNotEqual(obj.objects.count(), obj_count + 1)
-                if obj == Post:
-                    self.assertNotIn(
-                        form_data['group'],
-                        obj.objects.all().values_list('group', flat=True)
-                    )
-                    self.assertNotIn(
-                        f'{obj._meta.get_field("image").upload_to}'
-                        f'{form_data["image"].name}',
-                        obj.objects.all().values_list('image', flat=True)
-                    )
-                self.assertNotIn(
-                    form_data['text'],
-                    obj.objects.all().values_list('text', flat=True)
-                )
+                self.assertEqual(len(obj.objects.all()), 0)
 
     def test_guest_and_not_author_can_not_edit_post(self):
         """Неавторизованный пользователь и не-автор поста не может
@@ -220,11 +209,6 @@ class PostFormsTest(TestCase):
                     self.POST_EDIT,
                     data=form_data,
                 )
+                post = Post.objects.get(id=self.post.id)
                 self.assertRedirects(response, redirect_url)
-                self.assertNotEqual(self.post.text, form_data['text'])
-                self.assertNotEqual(self.post.group, form_data['group'])
-                self.assertNotEqual(
-                    self.post.image.name,
-                    f'{Post._meta.get_field("image").upload_to}'
-                    f'{form_data["image"].name}'
-                )
+                self.assertEqual(post.id, self.post.id)

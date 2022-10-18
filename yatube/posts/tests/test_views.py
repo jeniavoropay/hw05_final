@@ -128,24 +128,24 @@ class PostViewsTest(TestCase):
         """Ленты с постами содержат правильное число постов
         на страницах."""
         cache.clear()
+        Post.objects.all().delete()
         self.posts = Post.objects.bulk_create(
             Post(
                 author=self.user,
                 group=self.group,
                 text=f'Тестовый пост {i}',
             )
-            for i in range(settings.POSTS_PER_PAGE)
+            for i in range(settings.POSTS_PER_PAGE + 1)
         )
-        posts_second_page = Post.objects.count() - settings.POSTS_PER_PAGE
         pages = [
             [INDEX, settings.POSTS_PER_PAGE],
             [GROUP_LIST, settings.POSTS_PER_PAGE],
             [PROFILE, settings.POSTS_PER_PAGE],
             [FOLLOW, settings.POSTS_PER_PAGE],
-            [f'{INDEX}?page=2', posts_second_page],
-            [f'{GROUP_LIST}?page=2', posts_second_page],
-            [f'{PROFILE}?page=2', posts_second_page],
-            [f'{FOLLOW}?page=2', posts_second_page],
+            [f'{INDEX}?page=2', 1],
+            [f'{GROUP_LIST}?page=2', 1],
+            [f'{PROFILE}?page=2', 1],
+            [f'{FOLLOW}?page=2', 1],
         ]
         for page, num_posts in pages:
             with self.subTest(page=page):
