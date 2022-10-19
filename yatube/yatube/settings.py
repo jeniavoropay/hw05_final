@@ -5,15 +5,15 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = 'e@72o2shb8sp*kvgapps*^$%v2pgzxjui42l-fi9^)($)4pz8q'
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '[::1]',
     'testserver',
-    'evgeniavoropay.pythonanywhere.com',
-    'www.evgeniavoropay.pythonanywhere.com',
+    'janevoropay.pythonanywhere.com',
+    'www.janevoropay.pythonanywhere.com',
 ]
 
 
